@@ -33,7 +33,43 @@ User data will therefore be stored in a MySQL database in a traditional
 user table with tenant info and so on. The design of this database
 structure is described below:
 
-    [[GK to detail out]]
+    Table user
+    user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(128) CHARSET UTF8 NOT NULL UNIQUE,
+    password VARCHAR(128) CHARSET UTF8 NOT NULL,
+    firstname VARCHAR(128) CHARSET UTF8,
+    verification_key VARCHAR(128) CHARSET UTF8,
+    last_login DATETIME,
+    state SMALLINT UNSIGNED
+    
+    Table device
+    user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    device_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    devicename VARCHAR(128) CHARSET UTF8,
+    session_key VARCHAR(128) CHARSET UTF8
+    
+
+When the user signs-up we create a user in our system with state not verified 
+simultaneously a verification code is sent in an email. The next time he 
+logins he is asked to enter the verification code. If correct his state changes
+to verified.
+
+The hashed password is stored and used to verify his identity whenever he signs in. 
+
+We ask him for the devicename and we store a non-expiring cookie that will 
+prefill the devicename everytime he connects or signs in. If there is no cookie
+he is provided with a list of devices to choose from or enter the name of a 
+new device.
+
+He will be also sent a cookie with session id that will be used to automatically
+login the user from a specific device
+
+
+He can ask to reset his password in which case all his session-ids are invalidate
+A mail is sent with password change authorisation key. In Change password screen
+he can either re-enter old password or change password authorisation key and then
+enter new password.
+
 
 We now turn our attention to the problem of pings & tags.
 
@@ -101,6 +137,17 @@ by re-using the same mechanism making our lives easier.
 ## Device View
 The overall view of a single device now looks like this:
 
+
+Question : Will each non-local come seperately to be appended to specific log
+and then combined? When does combining happen. 
+
+My thought: on Startup and whenever data comes from server based on subscription
+Can server send device specific logs as well as merged log so that combining is easy.
+
+Will server flag out of sequence data so combine may have to truncate and rebuild.
+
+This may be premature optimization. 
+
 ![overall view](device-view.png)
 
 ## Server View
@@ -117,6 +164,9 @@ Log messages can be of various types:
 3. Event Logs
 4. Commands: For example, "rename tag from X to Y" may be a command
    rather than actually updating all the data logs that contain that tag
+
+Suggestion: When combining logs we can have commands make retrospective 
+changes and disappear from combined log. 
 
 ### Interpreting tags
 Having logs of various types brings up an interesting property of this
@@ -138,4 +188,4 @@ These are the components we will use for TagTime data management:
 2. [Bolt DB](https://github.com/coreos/bbolt) for Golang Log Storage
 3. [NeDB](https://github.com/louischatriot/nedb) for Electron Client
    Storage
-4. ?? for Flutter App Storage
+4. https://github.com/tekartik/sqflite for Flutter App Storage
