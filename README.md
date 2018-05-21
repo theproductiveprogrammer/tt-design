@@ -55,6 +55,9 @@ The tagtime ping logs will have the following characteristics:
 3. Each record is sequenced one after another (monotonically increasing)
    by the [unix time](https://en.wikipedia.org/wiki/Unix_time) of it's
    entry.
+4. The logs are processed sequentially - starting from the first and all
+   the way to the last. As new logs come in they are processed to update
+   the system view/snapshot.
 
 Hence, conceptually the system looks like this:
 
@@ -70,6 +73,24 @@ form a combined log view:
 We can see that if any view is offline for a while the combined log will
 not contain it's data, but as soon as it comes back online it will
 simply add it's entries into the entire stream.
+
+## Log processing
+In order to get the final state of data for processing, the logs are
+processed sequentially - starting from the first and going all the way
+to the last.
+
+To 'update' data, new logs are simply appended which results in the
+client/processor updating it's 'snapshot' of the data. Similarily when
+updates are made to the data they are translated back into new log
+messages that are appended to the log.
+
+This means that _during startup_ the client/processor needs to go
+through every log from the beginning of time. However, once loaded every
+new update to be processed is going to be very quick as it only applies
+the latest differential change to the data.
+
+The startup speed should not be an issue because `Tagtime` starts up
+with the computer and continues running from that point onward.
 
 
 ## Errors and Debug Support
@@ -90,13 +111,26 @@ whichever sequence point they last had (their last unix time for that
 log).
 
 ## Types of Log Messages
-
 Log messages can be of various types:
 1. Data: Ping Data, Category data, User Config Data? etc etc
 2. Error Logs
 3. Event Logs
 4. Commands: For example, "rename tag from X to Y" may be a command
    rather than actually updating all the data logs that contain that tag
+
+### Interpreting tags
+Having logs of various types brings up an interesting property of this
+architecture: _as long as the client/processor_ ignores log messages it
+does not understand we can send newer logs to old clients with no
+problems - they will simply process the logs they understand and show
+the resultant view. Once upgraded they will simply show the additional
+features.
+
+For example if we did not support tag renaming in an older version once
+it started being supported all old clients would simply show the
+un-renamed tags (as they do not have a way to rename) and then the
+renamed tags once upgraded.
+
 
 ## Components Used
 These are the components we will use for TagTime data management:
