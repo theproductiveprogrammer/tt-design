@@ -89,4 +89,19 @@ log has been updated. Each device can then request for updates from
 whichever sequence point they last had (their last unix time for that
 log).
 
+## Types of Log Messages
 
+Log messages can be of various types:
+1. Data: Ping Data, Category data, User Config Data? etc etc
+2. Error Logs
+3. Event Logs
+4. Commands: For example, "rename tag from X to Y" may be a command
+   rather than actually updating all the data logs that contain that tag
+
+## Components Used
+These are the components we will use for TagTime data management:
+1. Maria Db
+2. [Bolt DB](https://github.com/coreos/bbolt) for Golang Log Storage
+3. [NeDB](https://github.com/louischatriot/nedb) for Electron Client
+   Storage
+4. ?? for Flutter App Storage
